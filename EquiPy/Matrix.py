@@ -42,25 +42,15 @@ def small_number_supression(
     # Count number of cases associated with each value
     count_pivot = data.pivot_table(values = column, index = IMD_col, 
                                    columns = eth_col, aggfunc = "count")
-    counts = count_pivot.values
 
     # Get pivot values and dimentions
-    vals = value_pivot.values
-    imax, jmax = vals.shape
+    vals = value_pivot
+
+    # supress labels
+    labels = np.round(value_pivot,1).astype(str)
+    labels[count_pivot < supp_thresh] = "Too\nsmall"
     
-    # Prepare empty labels matrix
-    labels = np.zeros((imax, jmax), dtype=object)
-    
-    for i in range(imax):
-        for j in range(jmax):
-            val_ij = vals[i, j]
-            count_ij = counts[i, j]
-            
-            if (count_ij<supp_thresh)*(count_ij>0):
-                labels[i,j] = "Too\nsmall"
-                vals[i, j] = 0
-            else:
-                labels[i,j] = str(np.round(val_ij,1))
+    vals[count_pivot < supp_thresh] = np.nan
 
     return vals, labels
 
