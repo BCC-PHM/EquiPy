@@ -50,23 +50,16 @@ def small_number_supression(
     labels = np.round(value_pivot,1).astype(str)
     labels[count_pivot < supp_thresh] = "Too\nsmall"
     
+    # supress values
     vals[count_pivot < supp_thresh] = np.nan
 
     return vals, labels
 
-# define inequality matrix function
-def inequality_map(data, 
-                   column, 
-                   palette = "Purples",
-                   eth_col = "Ethnicity", 
-                   IMD_col = "IMD",
-                   agg="mean",
-                   letter = "",
-                   supp_thresh = 5):
-    
-    # Get bar color that matches the chosen palette
-    bar_col = plt.colormaps[palette](0.8)
-    
+def get_values(data, 
+               column, 
+               eth_col = "Ethnicity", 
+               IMD_col = "IMD",
+               agg="mean"):
     if agg=="mean":
         multiply = 100
         agg_col = "{} %".format(column)
@@ -78,23 +71,46 @@ def inequality_map(data,
         multiply = 1
         
     data[agg_col] = multiply*data[column]
-    eth_imd_piv = data.pivot_table(values = column, index = IMD_col, 
+    eth_imd_piv = multiply * data.pivot_table(values = column, index = IMD_col, 
                                        columns = eth_col, aggfunc= agg)
+    return eth_imd_piv, agg_col
+
+# define inequality matrix function
+def inequality_map(data, 
+                   column, 
+                   palette = "Purples",
+                   eth_col = "Ethnicity", 
+                   IMD_col = "IMD",
+                   agg="mean",
+                   letter = "",
+                   supp_thresh = 5):
+    
+    # Pivot data to get plot raw values
+    plot_vals, agg_col = get_values(
+        data, 
+        column, 
+        eth_col, 
+        IMD_col,
+        agg
+        )
     
     # Apply small number supression
-    vals, labels = small_number_supression(
+    plot_vals, labels = small_number_supression(
             data,
             column, 
-            multiply*eth_imd_piv,
+            plot_vals,
             eth_col = eth_col, 
             IMD_col = IMD_col,
             supp_thresh = supp_thresh)
+
+    # Get bar color that matches the chosen palette
+    bar_col = plt.colormaps[palette](0.8)
 
     fig = plt.figure(figsize=(8, 8))
     gs = fig.add_gridspec(8, 8)
 
     ax1 = fig.add_subplot(gs[2:8, :6])
-    sns.heatmap(vals, annot=labels, fmt="",
+    sns.heatmap(plot_vals, annot=labels, fmt="",
                 linewidths=.5, ax=ax1, cmap = palette, cbar=False)
 
     ax1.set_yticklabels(ax1.get_yticks(), rotation = 0)
