@@ -14,25 +14,15 @@ sns.set_theme(style="ticks", rc=custom_params)
 # define inequality matrix function
 def inequality_map(data, 
                    column, 
-                   color = "Purples",#"Reds",
+                   palette = "Purples",
                    eth_col = "Ethnicity Group", 
                    IMD_col = "IMD Quintile - ALL",
                    agg="mean",
                    fmt=".1f",
                    letter = ""):
-    cmap = color
-    if color == "Blues":
-        bar_col = "tab:blue"
-    elif color == "Reds":
-        bar_col = "tab:red"
-    elif color == "RdPu":
-        bar_col = "#E12184"
-    elif color == "Purples":
-        bar_col = "#8172b3"#"tab:purple"
-    elif color == "Oranges":
-        bar_col = "#dd8452"
-    else:
-        bar_col = "Gray"
+    
+    # Get bar color that matches the chosen palette
+    bar_col = plt.colormaps[palette](0.8)
     
     if agg=="mean":
         multiply = 100
@@ -54,7 +44,7 @@ def inequality_map(data,
 
     ax1 = fig.add_subplot(gs[2:8, :6])
     sns.heatmap(multiply*eth_imd_piv, annot=True, fmt = fmt, linewidths=.5, 
-                ax=ax1, cmap = cmap, cbar=False)
+                ax=ax1, cmap = palette, cbar=False)
 
     ax1.set_yticklabels(ax1.get_yticks(), rotation = 0)
     # TODO: Develop dynamic solution for this labelling
