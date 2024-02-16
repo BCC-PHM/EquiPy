@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import scipy.stats
+from scipy.stats import norm
 
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", rc=custom_params)
@@ -82,46 +82,63 @@ def add_ttest(
         data,
         labels,
         column, 
-        plot_vals,
         eth_col = "Ethnicity", 
-        IMD_col = "IMD",
-        ):
-    # https://datagy.io/t-test-python/
+        IMD_col = "IMD"):
+    '''
+    Parameters
+    ----------
+    data : DataFrame
+        Source data containing ethnicity and deprivation columns
+    labels : DataFrame
+        Plot value labels.
+    column : string
+        Column for .
+    eth_col : string, optional
+        Column header for ethnicity column. The default is "Ethnicity".
+    IMD_col : string, optional
+        Column header for deprivation index column. The default is "IMD".
+        
+    Returns
+    -------
+    labels : DataFrame
+        Two-sample t-test on number of samples.
+
+    '''
+    # https://medium.com/analytics-vidhya/testing-a-difference-in-population-proportions-in-python-89d57a06254
     
     # Get sample means
-    X1 = data.pivot_table(values = column, index = IMD_col, 
-                          columns = eth_col, aggfunc= "mean")
-    
-    # Get sample standard deviations
-    s1 = data.pivot_table(values = column, index = IMD_col, 
-                          columns = eth_col, aggfunc= "std")
+    x1 = data.pivot_table(values = column, index = IMD_col, 
+                          columns = eth_col, aggfunc= "sum")
+
     
     # Get number in each sample
     n1 = data.pivot_table(values = column, index = IMD_col, 
                           columns = eth_col, aggfunc= "count")
     
+    p1 = x1/n1
+    
     # Get reference values
     # TODO: Make it so that a different cell can be set a reference
-    X2 = X1.values[-1,-1]
-    s2 = s1.values[-1,-1]
+    x2 = x1.values[-1,-1]
     n2 = n1.values[-1,-1]
     
-    t = (X1 - X2) / np.sqrt( s1**2/n1 + s2**2/n2 )
+    p2 = x2/n2
     
-    df = n1 + n2 - 2
+    p_star = (x1 + x2) / (n1 + n2)
+    variance = p_star *(1 - p_star)
+    standard_error = np.sqrt( variance * (1 / n1 + 1 / n2) ) 
+    z_star = (p1 - p2) / standard_error
     
-    p_score = scipy.stats.t.sf(abs(t), df=df)*2
-    
+    p_score = 2*norm.cdf(-np.abs(z_star))
     
     sigs = np.full(labels.shape, "", dtype=object)
     
     sigs[p_score <= 0.1 ] = "*"
     sigs[p_score <= 0.05 ] = "**"
     sigs[p_score <= 0.001 ] = "***"
-    #print(p_score <= 0.001)
     
+
     labels = labels + "\n" + sigs
-    #print(type(labels))
     labels.iloc[-1,-1] = labels.iloc[-1,-1] + "(Ref)"
 
 
@@ -162,7 +179,6 @@ def inequality_map(data,
             data,
             labels,
             column, 
-            plot_vals,
             eth_col = eth_col, 
             IMD_col = IMD_col
             )
