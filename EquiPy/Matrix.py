@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import scipy.stats
 
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", rc=custom_params)
@@ -55,11 +56,13 @@ def small_number_supression(
 
     return vals, labels
 
-def get_values(data, 
-               column, 
-               eth_col = "Ethnicity", 
-               IMD_col = "IMD",
-               agg="mean"):
+def get_values(
+        data, 
+        column,
+        eth_col = "Ethnicity", 
+        IMD_col = "IMD",
+        agg="mean"
+        ):
     if agg=="mean":
         multiply = 100
         agg_col = "{} %".format(column)
@@ -75,6 +78,56 @@ def get_values(data,
                                        columns = eth_col, aggfunc= agg)
     return eth_imd_piv, agg_col
 
+def add_ttest(
+        data,
+        labels,
+        column, 
+        plot_vals,
+        eth_col = "Ethnicity", 
+        IMD_col = "IMD",
+        ):
+    # https://datagy.io/t-test-python/
+    
+    # Get sample means
+    X1 = data.pivot_table(values = column, index = IMD_col, 
+                          columns = eth_col, aggfunc= "mean")
+    
+    # Get sample standard deviations
+    s1 = data.pivot_table(values = column, index = IMD_col, 
+                          columns = eth_col, aggfunc= "std")
+    
+    # Get number in each sample
+    n1 = data.pivot_table(values = column, index = IMD_col, 
+                          columns = eth_col, aggfunc= "count")
+    
+    # Get reference values
+    # TODO: Make it so that a different cell can be set a reference
+    X2 = X1.values[-1,-1]
+    s2 = s1.values[-1,-1]
+    n2 = n1.values[-1,-1]
+    
+    t = (X1 - X2) / np.sqrt( s1**2/n1 + s2**2/n2 )
+    
+    df = n1 + n2 - 2
+    
+    p_score = scipy.stats.t.sf(abs(t), df=df)*2
+    
+    
+    sigs = np.full(labels.shape, "", dtype=object)
+    
+    sigs[p_score <= 0.1 ] = "*"
+    sigs[p_score <= 0.05 ] = "**"
+    sigs[p_score <= 0.001 ] = "***"
+    #print(p_score <= 0.001)
+    
+    labels = labels + "\n" + sigs
+    #print(type(labels))
+    labels.iloc[-1,-1] = labels.iloc[-1,-1] + "(Ref)"
+
+
+    return labels
+
+
 # define inequality matrix function
 def inequality_map(data, 
                    column, 
@@ -83,7 +136,8 @@ def inequality_map(data,
                    IMD_col = "IMD",
                    agg="mean",
                    letter = "",
-                   supp_thresh = 5):
+                   supp_thresh = 5,
+                   ttest = False):
     
     # Pivot data to get plot raw values
     plot_vals, agg_col = get_values(
@@ -102,6 +156,16 @@ def inequality_map(data,
             eth_col = eth_col, 
             IMD_col = IMD_col,
             supp_thresh = supp_thresh)
+
+    if ttest:
+        labels = add_ttest(
+            data,
+            labels,
+            column, 
+            plot_vals,
+            eth_col = eth_col, 
+            IMD_col = IMD_col
+            )
 
     # Get bar color that matches the chosen palette
     bar_col = plt.colormaps[palette](0.8)
@@ -130,7 +194,6 @@ def inequality_map(data,
     bar1.get_lines()[0].get_data()
     ax2.set_xticks([])
     ax2.set_xlabel("")
-
 
     ax3 = fig.add_subplot(gs[2:, 6:])
     sns.barplot(data, y = IMD_col,
