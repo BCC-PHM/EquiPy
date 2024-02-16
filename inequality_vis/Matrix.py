@@ -28,7 +28,9 @@ def inequality_map(data,
     elif color == "RdPu":
         bar_col = "#E12184"
     elif color == "Purples":
-        bar_col = "tab:purple"
+        bar_col = "#8172b3"#"tab:purple"
+    elif color == "Oranges":
+        bar_col = "#dd8452"
     else:
         bar_col = "Gray"
     
