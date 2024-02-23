@@ -14,7 +14,8 @@ setup(
         'pandas',
         'numpy',
         'matplotlib',
-        'seaborn'
+        'seaborn',
+        'scipy'
     ],
     classifiers=[  
         'Programming Language :: Python :: 3',
