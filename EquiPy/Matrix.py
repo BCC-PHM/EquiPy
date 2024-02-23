@@ -14,106 +14,92 @@ sns.set_theme(style="ticks", rc=custom_params)
 
 
 def small_number_supression(
-        data,
-        column, 
-        value_pivot,
-        eth_col = "Ethnicity", 
-        IMD_col = "IMD",
-        supp_thresh = 5):
+        count_pivot,
+        plot_pivot, 
+        supp_thresh = 5
+        ):
     '''
     Parameters
     ----------
-    data : DataFrame
-        Source data containing ethnicity and deprivation columns
-    value_pivot : DataFrame
-        pivot table of counts accross
+    count_pivot : DataFrame
+        
+    plot_pivot : DataFrame
+        
     supp_thresh : int, optional
         Values relating to counts below this value will be supressed.
         The default is 5.
-    ttest: bool
         
     Returns
     -------
-    values : numpy array
+    supressed_pivot : numpy array
         Array of values that are allowed following supression
     labels : numpy array
         Array of labels.
     '''
     
-    # Count number of cases associated with each value
-    count_pivot = data.pivot_table(values = column, index = IMD_col, 
-                                   columns = eth_col, aggfunc = "count")
-
     # Get pivot values and dimentions
-    vals = value_pivot
+    supressed_pivot = plot_pivot
 
     # supress labels
-    labels = np.round(value_pivot,1).astype(str)
+    labels = np.round(plot_pivot,1).astype(str)
     labels[count_pivot < supp_thresh] = "Too\nsmall"
     
     # supress values
-    vals[count_pivot < supp_thresh] = np.nan
+    supressed_pivot[count_pivot < supp_thresh] = np.nan
 
-    return vals, labels
+    return supressed_pivot, labels
 
-def get_values(
+def get_pivot(
         data, 
-        column,
+        column = None,
         eth_col = "Ethnicity", 
         IMD_col = "IMD",
-        agg="mean"
+        mode="percentage"
         ):
-    if agg=="mean":
-        multiply = 100
-        agg_col = "{} %".format(column)
-    elif agg=="sum":
-        agg_col = "Total number\n{}".format(column)
-        multiply = 1
-    else:
-        agg_col = "agg val"
-        multiply = 1
+    
+    if mode=="percentage":
         
-    data[agg_col] = multiply*data[column]
-    eth_imd_piv = multiply * data.pivot_table(values = column, index = IMD_col, 
-                                       columns = eth_col, aggfunc= agg)
-    return eth_imd_piv, agg_col
+        if column == None:
+            assert("Undefined variable column.")
+        
+        output_pivot = 100 * data.pivot_table(values = column, index = IMD_col, 
+                                              columns = eth_col, aggfunc = "mean")
+    elif mode=="count":
+        data["index"] = range(len(data))
+        output_pivot = data.pivot_table(values = "index", index = IMD_col,
+                                        columns = eth_col, aggfunc = "count")
+    else:
+        assert("Mode not recognised. Please set mode = 'percentage' or 'count'.")
+        
+    return output_pivot
 
 def add_ttest(
-        data,
-        labels,
-        column, 
-        eth_col = "Ethnicity", 
-        IMD_col = "IMD"):
+    count_pivot,
+    plot_pivot,
+    labels
+    ):
     '''
     Parameters
     ----------
-    data : DataFrame
-        Source data containing ethnicity and deprivation columns
-    labels : DataFrame
-        Plot value labels.
-    column : string
-        Column for .
-    eth_col : string, optional
-        Column header for ethnicity column. The default is "Ethnicity".
-    IMD_col : string, optional
-        Column header for deprivation index column. The default is "IMD".
+    count_pivot : DataFrame
+        
+    plot_pivot : DataFrame
+        
+    labels : numpy array
+        Array of labels.
         
     Returns
     -------
     labels : DataFrame
         Two-sample t-test on number of samples.
-
     '''
     # https://medium.com/analytics-vidhya/testing-a-difference-in-population-proportions-in-python-89d57a06254
     
     # Get sample means
-    x1 = data.pivot_table(values = column, index = IMD_col, 
-                          columns = eth_col, aggfunc= "sum")
+    x1 = count_pivot
 
-    
     # Get number in each sample
-    n1 = data.pivot_table(values = column, index = IMD_col, 
-                          columns = eth_col, aggfunc= "count")
+    n1 = plot_pivot/100
     
     p1 = x1/n1
     
@@ -146,41 +132,31 @@ def add_ttest(
 
 
 # define inequality matrix function
-def inequality_map(data, 
-                   column, 
+def inequality_map(count_pivot, 
+                   perc_pivot = None, 
                    palette = "Purples",
-                   eth_col = "Ethnicity", 
-                   IMD_col = "IMD",
-                   agg="mean",
                    letter = "",
                    supp_thresh = 5,
                    ttest = False):
     
-    # Pivot data to get plot raw values
-    plot_vals, agg_col = get_values(
-        data, 
-        column, 
-        eth_col, 
-        IMD_col,
-        agg
-        )
-    
-    # Apply small number supression
-    plot_vals, labels = small_number_supression(
-            data,
-            column, 
-            plot_vals,
-            eth_col = eth_col, 
-            IMD_col = IMD_col,
-            supp_thresh = supp_thresh)
+    if type(perc_pivot) != pd.core.frame.DataFrame:
+        plot_pivot = count_pivot
+    else:
+        plot_pivot = perc_pivot
 
-    if ttest:
+
+    # Apply small number supression
+    supressed_pivot, labels = small_number_supression(
+            count_pivot,
+            plot_pivot, 
+            supp_thresh = supp_thresh)
+    
+
+    if ttest and ( type(perc_pivot) == pd.core.frame.DataFrame):
         labels = add_ttest(
-            data,
-            labels,
-            column, 
-            eth_col = eth_col, 
-            IMD_col = IMD_col
+            count_pivot,
+            plot_pivot,
+            labels
             )
 
     # Get bar color that matches the chosen palette
@@ -190,7 +166,7 @@ def inequality_map(data,
     gs = fig.add_gridspec(8, 8)
 
     ax1 = fig.add_subplot(gs[2:8, :6])
-    sns.heatmap(plot_vals, annot=labels, fmt="",
+    sns.heatmap(plot_pivot, annot=labels, fmt="",
                 linewidths=.5, ax=ax1, cmap = palette, cbar=False)
 
     ax1.set_yticklabels(ax1.get_yticks(), rotation = 0)
@@ -199,25 +175,18 @@ def inequality_map(data,
     ax1.set_yticklabels(["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"])
     
     ax1.set_xticklabels(ax1.get_xticks(), rotation = 0)
-    ax1.set_xticklabels(np.unique(data[eth_col]))
+    ax1.set_xticklabels(perc_pivot.columns)
     ax1.set_ylabel("IMD Quintile")
     
     ax2 = fig.add_subplot(gs[:2, :6])
-    bar1 = sns.barplot(data, x = eth_col, y = agg_col,
-                  color = bar_col,
-                  order = np.unique(data[eth_col]),
-                  estimator = agg)
+    bar1 = sns.barplot(plot_pivot, color = bar_col)
+    sns.barplot(plot_pivot, color = bar_col)
     bar1.get_lines()[0].get_data()
     ax2.set_xticks([])
     ax2.set_xlabel("")
 
     ax3 = fig.add_subplot(gs[2:, 6:])
-    sns.barplot(data, y = IMD_col,
-                x = agg_col,
-                color = bar_col,
-                order = [1,2,3,4,5],orient="h",
-                estimator = agg
-                )
+    sns.barplot(plot_pivot.T, color = bar_col)
 
     ax3.set_yticks([])
     ax3.set_ylabel("")
