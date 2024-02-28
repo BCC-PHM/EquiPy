@@ -41,7 +41,7 @@ def small_number_supression(
     supressed_pivot = plot_pivot
 
     # supress labels
-    labels = np.round(plot_pivot,1).astype(str)
+    labels = np.round(plot_pivot,1).astype(str) + "%"
     labels[count_pivot < supp_thresh] = "Too\nsmall"
     
     # supress values
@@ -135,10 +135,12 @@ def add_ttest(
 def inequality_map(count_pivot, 
                    perc_pivot = None, 
                    palette = "Purples",
+                   title = "",
                    letter = "",
                    supp_thresh = 5,
                    ttest = False):
     
+    # If no percentage pivot given, just plot the count
     if type(perc_pivot) != pd.core.frame.DataFrame:
         plot_pivot = count_pivot
     else:
@@ -184,12 +186,20 @@ def inequality_map(count_pivot,
     bar1.get_lines()[0].get_data()
     ax2.set_xticks([])
     ax2.set_xlabel("")
+    ax2.set_ylabel(title)
 
     ax3 = fig.add_subplot(gs[2:, 6:])
-    sns.barplot(plot_pivot.T, color = bar_col)
+    sns.barplot(plot_pivot.T, color = bar_col, orient = "h")
 
     ax3.set_yticks([])
     ax3.set_ylabel("")
+    ax3.set_xlabel(title)
+    
+    # Fix barplot axis so that they match
+    perc_max = max(ax2.get_ylim()[1], ax1.get_xlim()[1])
+    bar_max = int(np.ceil(perc_max / 5.0)) * 5
+    ax2.set_ylim(0, bar_max)
+    ax3.set_xlim(0, bar_max)
     
     ax1.annotate(letter, (0.82, 0.82), xycoords='figure fraction',
                  size = 22)
