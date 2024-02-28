@@ -50,9 +50,7 @@ def small_number_supression(
     # supress labels
     labels = np.round(value_pivot,1).astype(str)
     labels[count_pivot < supp_thresh] = "Too\nsmall"
-    
-    # supress values
-    vals[count_pivot < supp_thresh] = np.nan
+
 
     return vals, labels
 
