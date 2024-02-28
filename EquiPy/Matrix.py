@@ -43,7 +43,7 @@ def small_number_supression(
     labels = np.round(plot_pivot,1).astype(str)
     
     # Add percentage symbol if needed 
-    if all((plot_pivot.values != count_pivot.values).flatten()):
+    if any((plot_pivot.values != count_pivot.values).flatten()):
         labels = labels + "%"
 
     # supress labels
