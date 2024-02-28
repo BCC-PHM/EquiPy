@@ -40,8 +40,14 @@ def small_number_supression(
     # Get pivot values and dimentions
     supressed_pivot = plot_pivot
 
+    labels = np.round(plot_pivot,1).astype(str)
+    
+    # Add percentage symbol if perc 
+    if all((plot_pivot.values != count_pivot.values).flatten()):
+        print("They're all not equal!")
+        labels = labels + "%"
+
     # supress labels
-    labels = np.round(plot_pivot,1).astype(str) + "%"
     labels[count_pivot < supp_thresh] = "Too\nsmall"
     
     # supress values
@@ -95,27 +101,28 @@ def add_ttest(
     '''
     # https://medium.com/analytics-vidhya/testing-a-difference-in-population-proportions-in-python-89d57a06254
     
-    # Get sample means
-    x1 = count_pivot
-
     # Get number in each sample
-    n1 = plot_pivot/100
-    
-    p1 = x1/n1
+    n1 = count_pivot 
+    p1 = plot_pivot/100
+    x1 = n1*p1
     
     # Get reference values
     # TODO: Make it so that a different cell can be set a reference
-    x2 = x1.values[-1,-1]
     n2 = n1.values[-1,-1]
-    
-    p2 = x2/n2
+    p2 = p1.values[-1,-1]
+    x2 = n2*p2
     
     p_star = (x1 + x2) / (n1 + n2)
-    variance = p_star *(1 - p_star)
+    variance = p_star * (1 - p_star)
+
     standard_error = np.sqrt( variance * (1 / n1 + 1 / n2) ) 
     z_star = (p1 - p2) / standard_error
     
+
+    
     p_score = 2*norm.cdf(-np.abs(z_star))
+    
+    #print(p_star, "\n", variance, "\n", standard_error, "\n", z_star,  "\n", p_score)
     
     sigs = np.full(labels.shape, "", dtype=object)
     
@@ -177,7 +184,7 @@ def inequality_map(count_pivot,
     ax1.set_yticklabels(["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"])
     
     ax1.set_xticklabels(ax1.get_xticks(), rotation = 0)
-    ax1.set_xticklabels(perc_pivot.columns)
+    ax1.set_xticklabels(plot_pivot.columns)
     ax1.set_ylabel("IMD Quintile")
     
     ax2 = fig.add_subplot(gs[:2, :6])
