@@ -146,9 +146,13 @@ def inequality_map(count_pivot,
     # If no percentage pivot given, just plot the count
     if type(perc_pivot) != pd.core.frame.DataFrame:
         plot_pivot = count_pivot
+        bar_x = np.sum(count_pivot, axis = 0)
+        bar_y = np.sum(count_pivot, axis = 1)
     else:
         plot_pivot = perc_pivot
-
+        bar_x = np.sum(count_pivot*perc_pivot, axis = 0) / np.sum(count_pivot, axis = 0)
+        bar_y = np.sum(count_pivot*perc_pivot, axis = 1) / np.sum(count_pivot, axis = 1)
+        print(bar_x,"\n", bar_y)
 
     # Apply small number supression
     supressed_pivot, labels = small_number_supression(
@@ -184,15 +188,15 @@ def inequality_map(count_pivot,
     ax1.set_ylabel("IMD Quintile")
     
     ax2 = fig.add_subplot(gs[:2, :6])
-    bar1 = sns.barplot(plot_pivot, color = bar_col)
-    sns.barplot(plot_pivot, color = bar_col)
+    bar1 = sns.barplot(x = bar_x.index, y = bar_x,  color = bar_col)
+    #sns.barplot(plot_pivot, color = bar_col)
     bar1.get_lines()[0].get_data()
     ax2.set_xticks([])
     ax2.set_xlabel("")
     ax2.set_ylabel(title)
 
     ax3 = fig.add_subplot(gs[2:, 6:])
-    sns.barplot(plot_pivot.T, color = bar_col, orient = "h")
+    sns.barplot(x = bar_y, y = bar_y.index, color = bar_col, orient = "h")
 
     ax3.set_yticks([])
     ax3.set_ylabel("")
