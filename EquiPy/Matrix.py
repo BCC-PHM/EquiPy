@@ -165,7 +165,7 @@ def inequality_map(count_pivot,
             )
 
     # Get bar color that matches the chosen palette
-    bar_col = plt.colormaps[palette](0.8)
+    bar_col = plt.colormaps[palette](0.7)
 
     fig = plt.figure(figsize=(8, 8))
     gs = fig.add_gridspec(8, 8)
