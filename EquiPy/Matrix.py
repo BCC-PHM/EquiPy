@@ -118,8 +118,6 @@ def add_ttest(
     
     p_score = 2*norm.cdf(-np.abs(z_star))
     
-    #print(p_star, "\n", variance, "\n", standard_error, "\n", z_star,  "\n", p_score)
-    
     sigs = np.full(labels.shape, "", dtype=object)
     
     sigs[p_score <= 0.1 ] = "*"
@@ -152,7 +150,6 @@ def inequality_map(count_pivot,
         plot_pivot = perc_pivot
         bar_x = np.sum(count_pivot*perc_pivot, axis = 0) / np.sum(count_pivot, axis = 0)
         bar_y = np.sum(count_pivot*perc_pivot, axis = 1) / np.sum(count_pivot, axis = 1)
-        print(bar_x,"\n", bar_y)
 
     # Apply small number supression
     supressed_pivot, labels = small_number_supression(
