@@ -3,9 +3,6 @@
 Attributable fraction for the exposed group
 
 AF = (RR-1)/RR
-
-TODO: Recalculate errors 
-      https://www2.ccrb.cuhk.edu.hk/stat/confidence%20interval/CI%20for%20relative%20risk.htm
 """
 
 import pandas as pd
@@ -17,7 +14,7 @@ def outcome_count(df, observable, ref_IMD = "3+",
                   eth_col = "Ethnicity Group",
                   IMD_col = "IMD Quintile",
                   scale_factor = 1):
-    count = df.groupby([eth_col, IMD_col])[observable].agg([sum]).reset_index()
+    count = df.groupby([eth_col, IMD_col])[observable].agg(["sum"]).reset_index()
     count_piv = pd.pivot_table(count, values = "sum", index = IMD_col, 
                                columns = eth_col)
     
@@ -37,7 +34,7 @@ def get_AF(df, observable, ref_IMD = "3+",
         proportion (PAF)
     '''
     #print(eth_col, IMD_col)
-    risk =  df.groupby([eth_col, IMD_col])[observable].agg([np.mean, len]).reset_index()
+    risk =  df.groupby([eth_col, IMD_col])[observable].agg(["mean", "count"]).reset_index()
     #print(risk)
     ref_mask = np.logical_and(risk[IMD_col] == ref_IMD,
                               risk[eth_col] == ref_eth)
@@ -46,7 +43,7 @@ def get_AF(df, observable, ref_IMD = "3+",
     R_u = risk["mean"][ref_mask].values[0]
     
     risk["RR"] = risk["mean"] / R_u
-    risk["Pe"] = risk["len"]/len(df)
+    risk["Pe"] = risk["count"]/len(df)
     
     if mode == "PAF":
         risk["AF_p"] = risk["Pe"] * (risk["RR"] - 1) / (1 + risk["Pe"] * (risk["RR"] - 1))
