@@ -66,7 +66,7 @@ def new_bootstrap_AF(df, observable,
                      IMD_col = "IMD Quintile"):
     df = df.sample(frac=1, replace=True)
     pivot = get_AF(df, observable, ref_IMD, ref_eth,
-                   eth_col = eth_col, IMD_col = IMD_col)#.reset_index()
+                   eth_col = eth_col, IMD_col = IMD_col).reset_index()
     return pivot
 
 def get_AF_CI(df, observable, 
@@ -74,12 +74,13 @@ def get_AF_CI(df, observable,
               eth_col = "Ethnicity Group",
               IMD_col = "IMD Quintile"):
     AF_bootstraps = np.asarray([new_bootstrap_AF(df, observable,
-                    eth_col = eth_col, IMD_col = IMD_col).values for i in range(n)])
+                    eth_col = eth_col, IMD_col = IMD_col).set_index(IMD_col).values for i in range(n)])
+    
     CI_vals = np.round(np.quantile(AF_bootstraps, q, axis = 0),2)
     
     CI = pd.DataFrame(CI_vals, 
                       columns=new_bootstrap_AF(df, observable,
-                   eth_col = eth_col, IMD_col = IMD_col).columns)
+                   eth_col = eth_col, IMD_col = IMD_col).set_index(IMD_col).columns)
     CI[IMD_col] = ["1", "2", "3+"]
     cols = list(CI.columns)
     cols = [cols[-1]] + cols[0:-1]
@@ -175,3 +176,86 @@ def plot_AF(AF_errs, outcome_counts, error_range = 100,
             else:
                 ax.annotate("REF", (i,j+.1), size = 12, ha='center')
     return fig
+
+
+def calc_AF_rubin(df, observable, imp_col, n = 100, 
+            ref_IMD = "3+", ref_eth = "White",
+            eth_col = "Ethnicity Group",
+            IMD_col = "IMD Quintile"):
+    # https://www.missingdata.nl/missing-data/missing-data-methods/multiple-imputation/
+    
+    # Calculate AF for the whole imputed dataset
+    AF_main = get_AF(df, 
+                observable,
+                eth_col = eth_col, 
+                IMD_col = IMD_col).reset_index()
+    
+    # Seperate the dataset into the different imputations
+    imputation_indicies = np.unique(df[imp_col])
+    M = len(imputation_indicies)
+    df_list = [df[df[imp_col] == imp_i] for imp_i in imputation_indicies]
+
+    # Var-within
+    var_list = []
+    print(" Imputation ({}): ".format(M), end = "")
+    for i, df_i in enumerate(df_list):
+        # Calculate standard deviation of n bootstrap distributions
+        bootstrap_i = [new_bootstrap_AF(df_i, observable, 
+                         ref_IMD = ref_IMD, 
+                         ref_eth = ref_eth,
+                         eth_col = eth_col,
+                         IMD_col = IMD_col) for j in range(n)]
+
+        # Label each imputation
+        for j in range(len(bootstrap_i)) :
+            bootstrap_i[j]["boot_col"] = i
+        
+        # Combine bootstrapped data and calculate variance
+        AF_comb = pd.concat(bootstrap_i, ignore_index=True, axis=0)
+        var_i = AF_comb.groupby([IMD_col])[AF_comb.columns[1:-1]].var().reset_index()
+
+        var_list.append(var_i)
+        
+        # Print progress
+        print(i+1, end = ", ")
+    print()
+    
+    ## Calcualte var sum ##
+    
+    # Label each imputation
+    for j in range(len(var_list)) :
+        var_list[j][imp_col] = j
+        
+    var_comb = pd.concat(var_list, ignore_index=True, axis=0)
+    #print("\n",var_comb.columns)
+    var_within = var_comb.groupby([IMD_col])[var_comb.columns[1:-1]].mean().reset_index()
+    #print(var_within)
+
+    # Var between
+    # Set IMD col as index to hide it from subtraction calculation
+    beta_diffs = [AF_main.set_index(IMD_col).sub(get_AF(df_i, 
+                observable))**2 for df_i in df_list]
+
+
+    #### START FROM HERE #### 
+    # Label each imputation and add IMD back as regular column
+    for j in range(len(beta_diffs)) :
+        beta_diffs[j] = beta_diffs[j].reset_index()
+        beta_diffs[j][imp_col] = j
+    
+    # Combine the list of square beta diffs
+    beta_comb = pd.concat(beta_diffs, ignore_index=True, axis=0)
+    
+
+    beta_diff_sum = beta_comb.groupby([IMD_col])[beta_comb.columns[1:-1]].sum()
+
+    var_between = beta_diff_sum / (M - 1)
+    
+    # calculate total variance   
+    var_total = var_within.set_index(IMD_col) + var_between + var_between / M
+ 
+    # Calculate confidence intervals
+    lower = AF_main.set_index(IMD_col) - 1.96 * np.sqrt(var_total) / 2
+    upper = AF_main.set_index(IMD_col) + 1.96 * np.sqrt(var_total) / 2
+    
+    return AF_main, lower.reset_index(), upper.reset_index()
