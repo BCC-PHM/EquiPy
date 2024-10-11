@@ -71,7 +71,7 @@ def get_pivot(
         data["index"] = range(len(data))
         output_pivot = data.pivot_table(values = "index", index = IMD_col,
                                         columns = eth_col, aggfunc = "count")
-        output_pivott[output_pivot.isnull()] = 0
+        output_pivot[output_pivot.isnull()] = 0
     else:
         assert("Mode not recognised. Please set mode = 'percentage' or 'count'.")
         
