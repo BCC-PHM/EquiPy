@@ -256,8 +256,7 @@ def calc_CI(count_pivot,
             CI_method = "Wilson",
             Z = 1.64485):
             
-    if (CI_method not in ["Wilson"]):
-        assert("CI_method not recognised.")
+    assert CI_method in ["Wilson"],  "CI_method not recognised."
     
     n = np.sum(perc_pivot * count_pivot / 100, axis = axis)
     N = np.sum(count_pivot, axis = axis)
