@@ -214,7 +214,7 @@ def inequality_map(count_pivot,
 
         # top bar plot
         ax2.errorbar(
-            x = axes[2].get_xticks().index, 
+            x = ax1.get_xticks() - 0.5, 
             y = bar_x,
             yerr = yerror,
             fmt ='o',
@@ -232,7 +232,7 @@ def inequality_map(count_pivot,
         # Right hand bar plot
         ax3.errorbar(
             x = bar_y, 
-            y = axes[3].get_yticks().index,
+            y = ax1.get_yticks()- 0.5,
             xerr = xerror,
             fmt ='o',
             color = "k",
