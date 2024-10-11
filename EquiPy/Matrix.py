@@ -140,7 +140,8 @@ def inequality_map(count_pivot,
                    letter = "",
                    supp_thresh = 5,
                    ttest = False,
-                   IMD_ticks = ["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"]
+                   IMD_ticks = ["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"],
+                   CI_method = None
                    ):
     
     # If no percentage pivot given, just plot the count
@@ -201,6 +202,43 @@ def inequality_map(count_pivot,
     ax3.set_ylabel("")
     ax3.set_xlabel(title)
     
+    # Calculate uncertainties
+    if (type(CI_method) == str) and ( type(perc_pivot) == pd.core.frame.DataFrame):
+        yerror = calc_CI(
+            count_pivot, 
+            perc_pivot,
+            axis = 0,
+            CI_method = CI_method,
+            Z = 1.64485
+            )
+
+        # top bar plot
+        ax2.errorbar(
+            x = bar_x.index, 
+            y = bar_x,
+            yerr = yerror,
+            fmt ='o',
+            color = "k",
+            ms = 0)
+        
+        
+        xerror = calc_CI(
+            count_pivot, 
+            perc_pivot,
+            axis = 1,
+            CI_method = CI_method,
+            Z = 1.64485
+            )
+        # Right hand bar plot
+        ax3.errorbar(
+            x = bar_y, 
+            y = bar_y.index - 1,
+            xerr = xerror,
+            fmt ='o',
+            color = "k",
+            ms = 0)
+    
+        
     # Fix barplot axis so that they match
     perc_max = max(ax2.get_ylim()[1], ax1.get_xlim()[1])
     bar_max = int(np.ceil(perc_max / 5.0)) * 5
@@ -212,3 +250,24 @@ def inequality_map(count_pivot,
     
     return fig
 
+def calc_CI(count_pivot, 
+            perc_pivot,
+            axis = 0,
+            CI_method = "Wilson",
+            Z = 1.64485):
+            
+    if (CI_method not in ["Wilson"]):
+        assert("CI_method not recognised.")
+    
+    n = np.sum(perc_pivot * count_pivot / 100, axis = axis)
+    N = np.sum(count_pivot, axis = axis)
+    
+    p_hat = n/N
+    
+    CI_lower = 100 * (p_hat + Z**2/(2*N) - Z * np.sqrt((p_hat*(1-p_hat)/N) + Z**2/(4*N**2))) / (1 + Z**2/N)
+    CI_upper = 100 * (p_hat + Z**2/(2*N) + Z * np.sqrt((p_hat*(1-p_hat)/N) + Z**2/(4*N**2))) / (1 + Z**2/N)
+    
+    
+    return [100*p_hat - CI_lower, CI_upper- 100*p_hat]
+    
+    
