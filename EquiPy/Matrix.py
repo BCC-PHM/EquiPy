@@ -38,8 +38,8 @@ def small_number_supression(
     '''
     
     # Get pivot values and dimentions
-    supressed_pivot = plot_pivot
-
+    supressed_pivot = count_pivot
+    supressed_pivot[count_pivot < supp_thresh] = 0 
     labels = np.round(plot_pivot,1).astype(str)
     
     # Add percentage symbol if needed 
@@ -48,6 +48,7 @@ def small_number_supression(
 
     # supress labels
     labels[count_pivot < supp_thresh] = "Too\nsmall"
+    labels[count_pivot.isnull()] = "0"
 
     return supressed_pivot, labels
 
@@ -70,6 +71,7 @@ def get_pivot(
         data["index"] = range(len(data))
         output_pivot = data.pivot_table(values = "index", index = IMD_col,
                                         columns = eth_col, aggfunc = "count")
+        output_pivott[output_pivot.isnull()] = 0
     else:
         assert("Mode not recognised. Please set mode = 'percentage' or 'count'.")
         
@@ -175,7 +177,7 @@ def inequality_map(count_pivot,
     gs = fig.add_gridspec(8, 8)
 
     ax1 = fig.add_subplot(gs[2:8, :6])
-    sns.heatmap(plot_pivot, annot=labels, fmt="",
+    sns.heatmap(supressed_pivot, annot=labels, fmt="",
                 linewidths=.5, ax=ax1, cmap = palette, cbar=False)
 
     ax1.set_yticklabels(ax1.get_yticks(), rotation = 0)
