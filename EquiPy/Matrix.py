@@ -139,7 +139,9 @@ def inequality_map(count_pivot,
                    title = "",
                    letter = "",
                    supp_thresh = 5,
-                   ttest = False):
+                   ttest = False,
+                   IMD_ticks = ["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"]
+                   ):
     
     # If no percentage pivot given, just plot the count
     if type(perc_pivot) != pd.core.frame.DataFrame:
@@ -178,7 +180,7 @@ def inequality_map(count_pivot,
     ax1.set_yticklabels(ax1.get_yticks(), rotation = 0)
     
     # TODO: Develop dynamic solution for this labelling
-    ax1.set_yticklabels(["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"])
+    ax1.set_yticklabels(IMD_ticks)
     
     ax1.set_xticklabels(ax1.get_xticks(), rotation = 0)
     ax1.set_xticklabels(plot_pivot.columns)
