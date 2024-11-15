@@ -13,7 +13,7 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", rc=custom_params)
 
 
-def small_number_supression(
+def small_number_suppression(
         count_pivot,
         plot_pivot, 
         supp_thresh = 5
@@ -32,13 +32,13 @@ def small_number_supression(
     Returns
     -------
     supressed_pivot : numpy array
-        Array of values that are allowed following supression
+        Array of values that are allowed following suppression
     labels : numpy array
         Array of labels.
     '''
     
     # Get pivot values and dimentions
-    supressed_pivot = count_pivot
+    supressed_pivot = plot_pivot
     supressed_pivot[count_pivot < supp_thresh] = 0 
     labels = np.round(plot_pivot,1).astype(str)
     
@@ -156,8 +156,8 @@ def inequality_map(count_pivot,
         bar_x = np.sum(count_pivot*perc_pivot, axis = 0) / np.sum(count_pivot, axis = 0)
         bar_y = np.sum(count_pivot*perc_pivot, axis = 1) / np.sum(count_pivot, axis = 1)
 
-    # Apply small number supression
-    supressed_pivot, labels = small_number_supression(
+    # Apply small number suppression
+    supressed_pivot, labels = small_number_suppression(
             count_pivot,
             plot_pivot, 
             supp_thresh = supp_thresh)
