@@ -143,7 +143,10 @@ def inequality_map(count_pivot,
                    supp_thresh = 5,
                    ttest = False,
                    IMD_ticks = ["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"],
-                   CI_method = None
+                   CI_method = None,
+                   width = 7,
+                   height = 6,
+                   Z = 1.96
                    ):
     
     # If no percentage pivot given, just plot the count
@@ -173,7 +176,7 @@ def inequality_map(count_pivot,
     # Get bar color that matches the chosen palette
     bar_col = plt.colormaps[palette](0.7)
 
-    fig = plt.figure(figsize=(7, 6))
+    fig = plt.figure(figsize=(width, height))
     gs = fig.add_gridspec(8, 8)
 
     ax1 = fig.add_subplot(gs[2:8, :6])
@@ -211,7 +214,7 @@ def inequality_map(count_pivot,
             perc_pivot,
             axis = 0,
             CI_method = CI_method,
-            Z = 1.64485
+            Z = Z
             )
 
         # top bar plot
@@ -229,7 +232,7 @@ def inequality_map(count_pivot,
             perc_pivot,
             axis = 1,
             CI_method = CI_method,
-            Z = 1.64485
+            Z = Z
             )
         # Right hand bar plot
         ax3.errorbar(
@@ -256,7 +259,7 @@ def calc_CI(count_pivot,
             perc_pivot,
             axis = 0,
             CI_method = "Wilson",
-            Z = 1.64485):
+            Z = 1.96):
             
     assert CI_method in ["Wilson"],  "CI_method not recognised."
     
