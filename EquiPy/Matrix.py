@@ -260,18 +260,27 @@ def calc_CI(count_pivot,
             axis = 0,
             CI_method = "Wilson",
             Z = 1.96):
-            
-    assert CI_method in ["Wilson"],  "CI_method not recognised."
     
     n = np.sum(perc_pivot * count_pivot / 100, axis = axis)
     N = np.sum(count_pivot, axis = axis)
     
     p_hat = n/N
+    if CI_method == "Wilson":
+        CI_lower = 100 * (p_hat + Z**2/(2*N) - Z * np.sqrt((p_hat*(1-p_hat)/N) + Z**2/(4*N**2))) / (1 + Z**2/N)
+        CI_upper = 100 * (p_hat + Z**2/(2*N) + Z * np.sqrt((p_hat*(1-p_hat)/N) + Z**2/(4*N**2))) / (1 + Z**2/N)
+    elif CI_method == "Byar":
+        a_prime = n + 1
+        CI_lower = 100 * n * (1 - 1/(9*n) - Z/3 * np.sqrt(1/a_prime))**3/N
+        CI_upper = 100 * a_prime * (1 - 1/(9*a_prime) + Z/3 * np.sqrt(1/a_prime))**3/N
+    else:
+        raise("CI_method not recognised.")
+    lower_val = 100*p_hat - CI_lower
+    upper_val = CI_upper-100*p_hat
     
-    CI_lower = 100 * (p_hat + Z**2/(2*N) - Z * np.sqrt((p_hat*(1-p_hat)/N) + Z**2/(4*N**2))) / (1 + Z**2/N)
-    CI_upper = 100 * (p_hat + Z**2/(2*N) + Z * np.sqrt((p_hat*(1-p_hat)/N) + Z**2/(4*N**2))) / (1 + Z**2/N)
+    # Prevent negative values
+    lower_val[lower_val < 0] = 0
+    upper_val[upper_val < 0] = 0
     
-    
-    return [100*p_hat - CI_lower, CI_upper- 100*p_hat]
+    return [lower_val, upper_val]
     
     
