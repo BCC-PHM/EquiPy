@@ -16,7 +16,8 @@ sns.set_theme(style="ticks", rc=custom_params)
 def small_number_suppression(
         count_pivot,
         plot_pivot, 
-        supp_thresh = 5
+        supp_thresh = 5,
+        supp_label = "Too\nsmall"
         ):
     '''
     Parameters
@@ -47,7 +48,7 @@ def small_number_suppression(
         labels = labels + "%"
 
     # supress labels
-    labels[count_pivot < supp_thresh] = "Too\nsmall"
+    labels[count_pivot < supp_thresh] = supp_label
     labels[count_pivot.isnull()] = "0"
 
     return supressed_pivot, labels
@@ -141,6 +142,7 @@ def inequality_map(count_pivot,
                    title = "",
                    letter = "",
                    supp_thresh = 5,
+                   supp_label = "Too\nsmall",
                    ttest = False,
                    IMD_ticks = ["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"],
                    CI_method = None,
@@ -164,7 +166,9 @@ def inequality_map(count_pivot,
     supressed_pivot, labels = small_number_suppression(
             count_pivot,
             plot_pivot, 
-            supp_thresh = supp_thresh)
+            supp_thresh = supp_thresh,
+            supp_label = supp_label
+            )
     
 
     if ttest and ( type(perc_pivot) == pd.core.frame.DataFrame):
