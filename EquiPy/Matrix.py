@@ -146,7 +146,8 @@ def inequality_map(count_pivot,
                    CI_method = None,
                    width = 7,
                    height = 6,
-                   Z = 1.96
+                   Z = 1.96,
+                   bar_rel_size = [0.2, 0.2]
                    ):
     
     # If no percentage pivot given, just plot the count
@@ -177,9 +178,9 @@ def inequality_map(count_pivot,
     bar_col = plt.colormaps[palette](0.7)
 
     fig = plt.figure(figsize=(width, height))
-    gs = fig.add_gridspec(8, 8)
+    gs = fig.add_gridspec(100, 100)
 
-    ax1 = fig.add_subplot(gs[2:8, :6])
+    ax1 = fig.add_subplot(gs[int(100*bar_rel_size[0]):100, :int(100 * (1-bar_rel_size[1]))])
     sns.heatmap(supressed_pivot, annot=labels, fmt="",
                 linewidths=.5, ax=ax1, cmap = palette, cbar=False)
 
@@ -192,7 +193,7 @@ def inequality_map(count_pivot,
     ax1.set_xticklabels(plot_pivot.columns)
     ax1.set_ylabel("IMD Quintile")
     
-    ax2 = fig.add_subplot(gs[:2, :6])
+    ax2 = fig.add_subplot(gs[:int(100*bar_rel_size[0]), :int(100 * (1-bar_rel_size[1]))])
     bar1 = sns.barplot(x = bar_x.index, y = bar_x,  color = bar_col)
     #sns.barplot(plot_pivot, color = bar_col)
     bar1.get_lines()[0].get_data()
@@ -200,7 +201,7 @@ def inequality_map(count_pivot,
     ax2.set_xlabel("")
     ax2.set_ylabel(title)
 
-    ax3 = fig.add_subplot(gs[2:, 6:])
+    ax3 = fig.add_subplot(gs[int(100*bar_rel_size[0]):, int(100 * (1-bar_rel_size[1])):])
     sns.barplot(x = bar_y, y = bar_y.index, color = bar_col, orient = "h")
 
     ax3.set_yticks([])
