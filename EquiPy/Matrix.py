@@ -50,7 +50,10 @@ def small_number_suppression(
     # supress labels
     labels[(count_pivot < supp_thresh) * (count_pivot > 0) ] = supp_label
     supressed_pivot[count_pivot < supp_thresh] = 0 
-    labels[count_pivot.isnull()] = "0"
+    
+    # label areas with no data
+    supressed_pivot[count_pivot.isna()] = 0  
+    labels[count_pivot == 0] = "No data"
 
     return supressed_pivot, labels
 
