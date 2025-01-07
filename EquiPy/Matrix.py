@@ -17,7 +17,8 @@ def small_number_suppression(
         count_pivot,
         plot_pivot, 
         supp_thresh = 5,
-        supp_label = "Too\nsmall"
+        supp_label = "Too\nsmall",
+        agg_type = "perc"
         ):
     '''
     Parameters
@@ -46,7 +47,8 @@ def small_number_suppression(
     labels[count_pivot.isna()] = 0  
     # Add percentage symbol if needed 
     if any((plot_pivot.values != count_pivot.values).flatten()):
-        labels = labels + "%"
+        if agg_type == "perc":
+            labels = labels + "%"
         
         # label areas with no data
         labels[count_pivot == 0] = "No data"
@@ -78,6 +80,11 @@ def get_pivot(
         data["index"] = range(len(data))
         output_pivot = data.pivot_table(values = "index", index = IMD_col,
                                         columns = eth_col, aggfunc = "count")
+        output_pivot[output_pivot.isnull()] = 0
+    elif mode == "avg":
+        data["index"] = range(len(data))
+        output_pivot = data.pivot_table(values = column, index = IMD_col,
+                                        columns = eth_col, aggfunc = "mean")
         output_pivot[output_pivot.isnull()] = 0
     else:
         assert("Mode not recognised. Please set mode = 'percentage' or 'count'.")
@@ -143,7 +150,9 @@ def add_ttest(
 
 # define inequality matrix function
 def inequality_map(count_pivot, 
-                   perc_pivot = None, 
+                   agg_pivot = None, 
+                   agg_type = "perc",
+                   sd_pivot = None,
                    palette = "Purples",
                    title = "",
                    letter = "",
@@ -159,25 +168,26 @@ def inequality_map(count_pivot,
                    ):
     
     # If no percentage pivot given, just plot the count
-    if type(perc_pivot) != pd.core.frame.DataFrame:
+    if type(agg_pivot) != pd.core.frame.DataFrame:
         plot_pivot = count_pivot
         bar_x = np.sum(count_pivot, axis = 0)
         bar_y = np.sum(count_pivot, axis = 1)
     else:
-        plot_pivot = perc_pivot
-        bar_x = np.sum(count_pivot*perc_pivot, axis = 0) / np.sum(count_pivot, axis = 0)
-        bar_y = np.sum(count_pivot*perc_pivot, axis = 1) / np.sum(count_pivot, axis = 1)
-
+        plot_pivot = agg_pivot
+        bar_x = np.sum(count_pivot*agg_pivot, axis = 0) / np.sum(count_pivot, axis = 0)
+        bar_y = np.sum(count_pivot*agg_pivot, axis = 1) / np.sum(count_pivot, axis = 1)
+        
     # Apply small number suppression
     supressed_pivot, labels = small_number_suppression(
             count_pivot,
             plot_pivot, 
             supp_thresh = supp_thresh,
-            supp_label = supp_label
+            supp_label = supp_label,
+            agg_type = agg_type
             )
     
 
-    if ttest and ( type(perc_pivot) == pd.core.frame.DataFrame):
+    if ttest and ( type(agg_pivot) == pd.core.frame.DataFrame):
         labels = add_ttest(
             count_pivot,
             plot_pivot,
@@ -219,13 +229,14 @@ def inequality_map(count_pivot,
     ax3.set_xlabel(title)
     
     # Calculate uncertainties
-    if (type(CI_method) == str) and ( type(perc_pivot) == pd.core.frame.DataFrame):
+    if (type(CI_method) == str) and ( type(agg_pivot) == pd.core.frame.DataFrame):
         yerror = calc_CI(
             count_pivot, 
-            perc_pivot,
+            agg_pivot,
             axis = 0,
             CI_method = CI_method,
-            Z = Z
+            Z = Z,
+            sd_pivot = sd_pivot
             )
 
         # top bar plot
@@ -240,10 +251,11 @@ def inequality_map(count_pivot,
         
         xerror = calc_CI(
             count_pivot, 
-            perc_pivot,
+            agg_pivot,
             axis = 1,
             CI_method = CI_method,
-            Z = Z
+            Z = Z,
+            sd_pivot = sd_pivot
             )
         # Right hand bar plot
         ax3.errorbar(
@@ -267,12 +279,13 @@ def inequality_map(count_pivot,
     return fig
 
 def calc_CI(count_pivot, 
-            perc_pivot,
+            agg_pivot,
             axis = 0,
             CI_method = "Wilson",
-            Z = 1.96):
+            Z = 1.96,
+            sd_pivot = None):
     
-    n = np.sum(perc_pivot * count_pivot / 100, axis = axis)
+    n = np.sum(agg_pivot * count_pivot / 100, axis = axis)
     N = np.sum(count_pivot, axis = axis)
     
     p_hat = n/N
