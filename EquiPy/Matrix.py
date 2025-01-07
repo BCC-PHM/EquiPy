@@ -42,18 +42,20 @@ def small_number_suppression(
     supressed_pivot = plot_pivot
     
     labels = np.round(plot_pivot,1).astype(str)
-    
+    supressed_pivot[count_pivot.isna()] = 0  
+    labels[count_pivot.isna()] = 0  
     # Add percentage symbol if needed 
     if any((plot_pivot.values != count_pivot.values).flatten()):
         labels = labels + "%"
+        
+        # label areas with no data
+        labels[count_pivot == 0] = "No data"
 
     # supress labels
     labels[(count_pivot < supp_thresh) * (count_pivot > 0) ] = supp_label
     supressed_pivot[count_pivot < supp_thresh] = 0 
     
-    # label areas with no data
-    supressed_pivot[count_pivot.isna()] = 0  
-    labels[count_pivot == 0] = "No data"
+
 
     return supressed_pivot, labels
 
