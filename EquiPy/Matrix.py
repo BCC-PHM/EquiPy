@@ -183,8 +183,7 @@ def inequality_map(count_pivot,
         plot_pivot = agg_pivot.copy()
         bar_x = np.sum(count_pivot*agg_pivot, axis = 0) / np.sum(count_pivot, axis = 0)
         bar_y = np.sum(count_pivot*agg_pivot, axis = 1) / np.sum(count_pivot, axis = 1)
-        print(bar_x)
-        print("-"*10)
+
     # Apply small number suppression
     supressed_pivot, labels = small_number_suppression(
             count_pivot,
@@ -246,7 +245,7 @@ def inequality_map(count_pivot,
             Z = Z,
             magnitude = magnitude
             )
-       # print(bar_x)
+
         # top bar plot
         ax2.errorbar(
             x = ax1.get_xticks() - 0.5, 
@@ -293,7 +292,7 @@ def calc_CI(count_pivot,
             Z = 1.96,
             magnitude = 100
             ):
-    print(axis)
+
     n = np.sum(agg_pivot * count_pivot / magnitude, axis = axis)
     N = np.sum(count_pivot, axis = axis)
     
@@ -321,12 +320,6 @@ def calc_CI(count_pivot,
     # Prevent impossible values
     lower_val[lower_val < 0] = 0
     upper_val[CI_upper < 0] = 0
-    
-    print(p_hat)
-    print("-"*10)   
-    print(CI_lower, CI_upper)
-    print("-"*10)
-    print(lower_val, upper_val)
     
     return [lower_val, upper_val]
     
