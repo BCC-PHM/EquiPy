@@ -159,6 +159,7 @@ def add_ttest(
 def inequality_map(count_pivot, 
                    agg_pivot = None, 
                    agg_type = "perc",
+                   magnitude = 100,
                    palette = "Purples",
                    title = "",
                    letter = "",
@@ -242,7 +243,8 @@ def inequality_map(count_pivot,
             agg_pivot,
             axis = 0,
             CI_method = CI_method,
-            Z = Z
+            Z = Z,
+            magnitude = magnitude
             )
        # print(bar_x)
         # top bar plot
@@ -260,7 +262,8 @@ def inequality_map(count_pivot,
             agg_pivot,
             axis = 1,
             CI_method = CI_method,
-            Z = Z
+            Z = Z,
+            magnitude = magnitude
             )
         # Right hand bar plot
         ax3.errorbar(
@@ -287,28 +290,33 @@ def calc_CI(count_pivot,
             agg_pivot,
             axis = 0,
             CI_method = "Wilson",
-            Z = 1.96):
+            Z = 1.96,
+            magnitude = 100
+            ):
     print(axis)
-    n = np.sum(agg_pivot * count_pivot / 100, axis = axis)
+    n = np.sum(agg_pivot * count_pivot / magnitude, axis = axis)
     N = np.sum(count_pivot, axis = axis)
     
     p_hat = n/N
     if CI_method == "Wilson":
-        CI_lower = 100 * (p_hat + Z**2/(2*N) - Z * np.sqrt((p_hat*(1-p_hat)/N) + Z**2/(4*N**2))) / (1 + Z**2/N)
-        CI_upper = 100 * (p_hat + Z**2/(2*N) + Z * np.sqrt((p_hat*(1-p_hat)/N) + Z**2/(4*N**2))) / (1 + Z**2/N)
+        CI_lower = magnitude * (p_hat + Z**2/(2*N) - Z * np.sqrt((p_hat*(1-p_hat)/N) + Z**2/(4*N**2))) / (1 + Z**2/N)
+        CI_upper = magnitude * (p_hat + Z**2/(2*N) + Z * np.sqrt((p_hat*(1-p_hat)/N) + Z**2/(4*N**2))) / (1 + Z**2/N)
+        # Prevent impossible CI values
+        CI_lower[CI_lower < 0] = 0
+        CI_upper[CI_upper > magnitude] = magnitude
     elif CI_method == "Byar":
         a_prime = n + 1
-        CI_lower = 100 * n * (1 - 1/(9*n) - Z/3 * np.sqrt(1/a_prime))**3/N
-        CI_upper = 100 * a_prime * (1 - 1/(9*a_prime) + Z/3 * np.sqrt(1/a_prime))**3/N
+        CI_lower = magnitude * n * (1 - 1/(9*n) - Z/3 * np.sqrt(1/a_prime))**3/N
+        CI_upper = magnitude * a_prime * (1 - 1/(9*a_prime) + Z/3 * np.sqrt(1/a_prime))**3/N
+        # Prevent impossible CI values
+        CI_lower[CI_lower < 0] = 0
     else:
         raise("CI_method not recognised.")
         
-    # Prevent impossible CI values
-    CI_lower[CI_lower < 0] = 0
-    CI_upper[CI_upper > 100] = 100
+
     
-    lower_val = 100*p_hat - CI_lower
-    upper_val = CI_upper-100*p_hat
+    lower_val = magnitude*p_hat - CI_lower
+    upper_val = CI_upper-magnitude*p_hat
     
     # Prevent impossible values
     lower_val[lower_val < 0] = 0
