@@ -45,17 +45,24 @@ def small_number_suppression(
     labels = np.round(plot_pivot,1).astype(str)
     supressed_pivot[count_pivot.isna()] = 0  
     labels[count_pivot.isna()] = 0  
+    
+    # Basic suppression based on denominator only
+    suppression_mask = (count_pivot < supp_thresh) * (count_pivot > 0) 
+    
     # Add percentage symbol if needed 
     if any((plot_pivot.values != count_pivot.values).flatten()):
         if agg_type == "perc":
             labels = labels + "%"
-        
+            # Update suppression based on numerator
+            suppression_mask = (count_pivot*plot_pivot/100 < supp_thresh) * \
+                (count_pivot*plot_pivot/100 > 0) 
+    
         # label areas with no data
         labels[count_pivot == 0] = "No data"
 
     # supress labels
-    labels[(count_pivot < supp_thresh) * (count_pivot > 0) ] = supp_label
-    supressed_pivot[count_pivot < supp_thresh] = 0 
+    labels[suppression_mask ] = supp_label
+    supressed_pivot[suppression_mask] = 0 
     
 
 
@@ -152,7 +159,6 @@ def add_ttest(
 def inequality_map(count_pivot, 
                    agg_pivot = None, 
                    agg_type = "perc",
-                   sd_pivot = None,
                    palette = "Purples",
                    title = "",
                    letter = "",
@@ -173,10 +179,11 @@ def inequality_map(count_pivot,
         bar_x = np.sum(count_pivot, axis = 0)
         bar_y = np.sum(count_pivot, axis = 1)
     else:
-        plot_pivot = agg_pivot
+        plot_pivot = agg_pivot.copy()
         bar_x = np.sum(count_pivot*agg_pivot, axis = 0) / np.sum(count_pivot, axis = 0)
         bar_y = np.sum(count_pivot*agg_pivot, axis = 1) / np.sum(count_pivot, axis = 1)
-        
+        print(bar_x)
+        print("-"*10)
     # Apply small number suppression
     supressed_pivot, labels = small_number_suppression(
             count_pivot,
@@ -235,10 +242,9 @@ def inequality_map(count_pivot,
             agg_pivot,
             axis = 0,
             CI_method = CI_method,
-            Z = Z,
-            sd_pivot = sd_pivot
+            Z = Z
             )
-
+       # print(bar_x)
         # top bar plot
         ax2.errorbar(
             x = ax1.get_xticks() - 0.5, 
@@ -254,8 +260,7 @@ def inequality_map(count_pivot,
             agg_pivot,
             axis = 1,
             CI_method = CI_method,
-            Z = Z,
-            sd_pivot = sd_pivot
+            Z = Z
             )
         # Right hand bar plot
         ax3.errorbar(
@@ -282,9 +287,8 @@ def calc_CI(count_pivot,
             agg_pivot,
             axis = 0,
             CI_method = "Wilson",
-            Z = 1.96,
-            sd_pivot = None):
-    
+            Z = 1.96):
+    print(axis)
     n = np.sum(agg_pivot * count_pivot / 100, axis = axis)
     N = np.sum(count_pivot, axis = axis)
     
@@ -298,12 +302,23 @@ def calc_CI(count_pivot,
         CI_upper = 100 * a_prime * (1 - 1/(9*a_prime) + Z/3 * np.sqrt(1/a_prime))**3/N
     else:
         raise("CI_method not recognised.")
+        
+    # Prevent impossible CI values
+    CI_lower[CI_lower < 0] = 0
+    CI_upper[CI_upper > 100] = 100
+    
     lower_val = 100*p_hat - CI_lower
     upper_val = CI_upper-100*p_hat
     
-    # Prevent negative values
+    # Prevent impossible values
     lower_val[lower_val < 0] = 0
-    upper_val[upper_val < 0] = 0
+    upper_val[CI_upper < 0] = 0
+    
+    print(p_hat)
+    print("-"*10)   
+    print(CI_lower, CI_upper)
+    print("-"*10)
+    print(lower_val, upper_val)
     
     return [lower_val, upper_val]
     
