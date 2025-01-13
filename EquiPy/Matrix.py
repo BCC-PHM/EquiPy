@@ -101,7 +101,8 @@ def get_pivot(
 def add_ttest(
     count_pivot,
     plot_pivot,
-    labels
+    labels,
+    supp_thresh = 0
     ):
     '''
     Parameters
@@ -137,8 +138,6 @@ def add_ttest(
     standard_error = np.sqrt( variance * (1 / n1 + 1 / n2) ) 
     z_star = (p1 - p2) / standard_error
     
-
-    
     p_score = 2*norm.cdf(-np.abs(z_star))
     
     sigs = np.full(labels.shape, "", dtype=object)
@@ -147,6 +146,8 @@ def add_ttest(
     sigs[p_score <= 0.05 ] = "**"
     sigs[p_score <= 0.001 ] = "***"
     
+    # Don't include in suppressed cells
+    sigs[x1 < supp_thresh] = ""
 
     labels = labels + "\n" + sigs
     labels.iloc[-1,-1] = labels.iloc[-1,-1] + "(Ref)"
@@ -198,7 +199,8 @@ def inequality_map(count_pivot,
         labels = add_ttest(
             count_pivot,
             plot_pivot,
-            labels
+            labels,
+            supp_thresh = supp_thresh,
             )
 
     # Get bar color that matches the chosen palette
